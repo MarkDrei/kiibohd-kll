@@ -37,6 +37,21 @@ pipenv run kll/kll --version
 pip install layouts
 ```
 
+### Offline use
+
+`layouts-python` downloads the [hid-io/layouts](https://github.com/hid-io/layouts)
+repository from GitHub on first use and caches it in the system temp directory.
+To compile without network access, clone that repository and point the compiler
+at it:
+
+```bash
+git clone https://github.com/hid-io/layouts
+export KLL_LAYOUTS_PATH=$PWD/layouts
+```
+
+`--layouts-path` does the same thing for a single invocation. When either is
+set, GitHub is never contacted.
+
 
 ## Usage
 

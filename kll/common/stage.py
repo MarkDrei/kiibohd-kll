@@ -458,6 +458,7 @@ class PreprocessorStage(Stage):
 
         self.layout_mgr = None
         self.layout_list = []
+        self.layouts_path = os.environ.get('KLL_LAYOUTS_PATH', None)
 
         self.processed_save_path = "{temp}/kll".format(temp=tempfile.gettempdir())
 
@@ -470,6 +471,7 @@ class PreprocessorStage(Stage):
         self.preprocessor_debug = args.preprocessor_debug
         self.processed_save_path = args.preprocessor_tmp_path
         self.version_check = args.version_check
+        self.layouts_path = args.layouts_path
 
     def command_line_flags(self, parser):
         '''
@@ -491,6 +493,11 @@ class PreprocessorStage(Stage):
         group.add_argument('--version-check', type=bool, default=self.version_check,
             help="Sets whether or not to fail compilation on version comparison failure."
             "\033[1mDefault\033[0m: {0}\n".format(self.version_check)
+        )
+        group.add_argument('--layouts-path', type=str, default=self.layouts_path,
+            help="Directory to read HID layouts from, instead of the GitHub cache.\n"
+            "Set this (or KLL_LAYOUTS_PATH) to compile without network access.\n"
+            "\033[1mDefault\033[0m: {0}\n".format(self.layouts_path)
         )
 
     def seed_context(self, kll_file):
@@ -812,8 +819,8 @@ class PreprocessorStage(Stage):
         pool = self.control.stage('CompilerConfigurationStage').pool
 
         # Build list of layouts
-        #self.layout_mgr = Layouts(layout_path='/home/hyatt/Source/layouts')
-        self.layout_mgr = Layouts()
+        # When layouts_path is set, layouts are read from disk and GitHub is never contacted
+        self.layout_mgr = Layouts(layout_path=self.layouts_path)
         self.layout_list = self.layout_mgr.list_layouts()
 
         # TODO

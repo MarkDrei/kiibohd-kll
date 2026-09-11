@@ -181,7 +181,7 @@ def command_line_args(control, input_args):
     # If --layout-cache-path defined, lookup cache directory for layouts cache, then exit
     if args.layout_cache_path:
         import layouts
-        mgr = layouts.Layouts()
+        mgr = layouts.Layouts(layout_path=args.layouts_path)
         layout_path = mgr.layout_path
         print(layout_path)
         sys.exit(0)
@@ -189,7 +189,8 @@ def command_line_args(control, input_args):
     # If --layout-cache-refresh defined, show the refreshed layout path
     if args.layout_cache_refresh:
         import layouts
-        mgr = layouts.Layouts(force_refresh=True)
+        # A local layouts directory is used as-is, there is no cache to refresh
+        mgr = layouts.Layouts(layout_path=args.layouts_path, force_refresh=args.layouts_path is None)
         layout_path = mgr.layout_path
         print(layout_path)
         sys.exit(0)
