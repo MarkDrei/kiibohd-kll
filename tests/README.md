@@ -3,6 +3,11 @@
 Unit and functional tests for the KLL compiler.
 Some tests are stand-alone, while others require some additional git repositories (automatically downloaded).
 
+The downloaded repositories default to the forks this compiler is used with,
+[kiibohd-Controller](https://github.com/MarkDrei/kiibohd-Controller) and this repository. Set
+`KLL_TEST_CONTROLLER_REPO` or `KLL_TEST_KLL_REPO` to use somewhere else, including a local
+checkout, which is also how to run these tests without network access.
+
 
 ## Tests
 

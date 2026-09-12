@@ -12,6 +12,15 @@ from git import Repo, exc
 
 
 
+### Variables ###
+
+# Tests run against this fork's firmware rather than upstream, so that a change
+# here is validated against the controller it is actually used with. Either may
+# be pointed at a local checkout, which also keeps the tests offline.
+CONTROLLER_REPO = os.environ.get('KLL_TEST_CONTROLLER_REPO', 'https://github.com/MarkDrei/kiibohd-Controller.git')
+KLL_REPO = os.environ.get('KLL_TEST_KLL_REPO', 'https://github.com/MarkDrei/kiibohd-kll.git')
+
+
 ### Functions ###
 
 def header_test(name, args):
@@ -45,7 +54,7 @@ def kiibohd_controller_repo():
     try:
         if not os.path.isdir(tmp_dir):
             # Clone if not available
-            Repo.clone_from('https://github.com/kiibohd/controller.git', tmp_dir)
+            Repo.clone_from(CONTROLLER_REPO, tmp_dir)
         else:
             # Update otherwise
             repo = Repo(tmp_dir)
@@ -60,7 +69,7 @@ def kiibohd_controller_repo():
         # Check for kll compiler as well (not used during testing, but required for controller tests)
         if not os.path.isdir(kll_dir):
             # Clone if not available
-            Repo.clone_from('https://github.com/kiibohd/kll.git', kll_dir)
+            Repo.clone_from(KLL_REPO, kll_dir)
         else:
             # Update otherwise
             repo_kll = Repo(kll_dir)
