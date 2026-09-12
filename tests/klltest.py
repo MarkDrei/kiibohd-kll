@@ -43,41 +43,44 @@ def kll_run(args):
     assert pytest_wrapped_e.type == SystemExit
     return pytest_wrapped_e.value.code
 
+def _ensure_git_checkout(source, cache_dir):
+    '''
+    Return a usable git checkout of source.
+
+    Existing local directories are used in place so tests can run offline and
+    CI can point at a previously checked-out tree. Remote URLs are cloned into
+    cache_dir (or updated if a clone is already present).
+    '''
+    if os.path.isdir(source):
+        return os.path.abspath(source)
+
+    try:
+        if not os.path.isdir(cache_dir):
+            Repo.clone_from(source, cache_dir)
+        else:
+            repo = Repo(cache_dir)
+            repo.remotes.origin.fetch('+refs/heads/*:refs/remotes/origin/*')
+            repo.remotes.origin.pull()
+    except exc.GitCommandError:
+        # Concurrent test processes may be initializing the same cache
+        pass
+
+    return cache_dir
+
+
 @pytest.fixture(scope="session")
 def kiibohd_controller_repo():
     '''
     Downloads a cached copy of the kiibohd controller repo
     '''
     tmp_dir = os.path.join(tempfile.gettempdir(), 'kll_controller_test')
-    kll_dir = os.path.join(tmp_dir, 'kll')
+    controller_dir = _ensure_git_checkout(CONTROLLER_REPO, tmp_dir)
 
-    try:
-        if not os.path.isdir(tmp_dir):
-            # Clone if not available
-            Repo.clone_from(CONTROLLER_REPO, tmp_dir)
-        else:
-            # Update otherwise
-            repo = Repo(tmp_dir)
-            repo.remotes.origin.fetch('+refs/heads/*:refs/remotes/origin/*')
-            repo.remotes.origin.pull()
-    except exc.GitCommandError:
-        # TODO Timeout loop, wait for repo to initialize
-        repo = Repo(tmp_dir)
-        pass
+    # Nested kll clone is only for remote/cache checkouts. Never write into a
+    # caller-supplied local controller tree.
+    if not os.path.isdir(CONTROLLER_REPO):
+        kll_dir = os.path.join(controller_dir, 'kll')
+        _ensure_git_checkout(KLL_REPO, kll_dir)
 
-    try:
-        # Check for kll compiler as well (not used during testing, but required for controller tests)
-        if not os.path.isdir(kll_dir):
-            # Clone if not available
-            Repo.clone_from(KLL_REPO, kll_dir)
-        else:
-            # Update otherwise
-            repo_kll = Repo(kll_dir)
-            repo_kll.remotes.origin.pull()
-    except exc.GitCommandError:
-        # TODO Timeout loop, wait for repo to initialize
-        repo = Repo(tmp_dir)
-        pass
-
-    return tmp_dir
+    return controller_dir
 

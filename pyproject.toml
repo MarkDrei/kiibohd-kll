@@ -1,26 +1,27 @@
 [build-system]
-requires = ["flit"]
-build-backend = "flit.buildapi"
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
 
-[tool.flit.metadata]
-module = "kll"
-author = "Jacob Alexander"
-author-email = "haata@kiibohd.com"
-home-page = "https://github.com/kiibohd/kll"
+[project]
+name = "kll"
+authors = [{name = "Jacob Alexander", email = "haata@kiibohd.com"}]
+readme = "README.md"
 classifiers = [
     "Topic :: Software Development :: Compilers",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Programming Language :: Python :: 3",
 ]
-description-file = "README.md"
-requires = [
+requires-python = ">=3.5"
+dependencies = [
     "layouts>=0.4.9",
     "gitpython",
     "packaging",
 ]
-requires-python = ">=3.5"
+dynamic = ["version", "description"]
 
-[tool.flit.scripts]
+[project.scripts]
 kll = "kll:wrapper"
 
+[project.urls]
+Home = "https://github.com/kiibohd/kll"

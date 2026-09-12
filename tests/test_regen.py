@@ -7,7 +7,6 @@ After creating new kll files (for each stage), compare the final kll file with a
 ### Imports ##
 
 import difflib
-import filecmp
 import os
 import pytest
 import tempfile
@@ -64,13 +63,14 @@ def test_regen(input_file):
     ret = kll_run(args)
     assert ret == 0
 
-    # Check if files are different
-    if not filecmp.cmp(cmp_file, new_file):
-        # Run diff as both files are different
-        with open(cmp_file, 'r') as cmpfile:
-            with open(new_file, 'r') as newfile:
-                # Run diff and fail the test
-                diff = difflib.ndiff(cmpfile.readlines(), newfile.readlines())
-                print(''.join(diff), end="")
-                assert False
+    # Compare as text so CRLF checkouts (Windows core.autocrlf) match LF output
+    def read_lines(path):
+        with open(path, 'r', newline='') as handle:
+            return [line.rstrip('\r\n') + '\n' for line in handle]
+
+    cmp_lines = read_lines(cmp_file)
+    new_lines = read_lines(new_file)
+    if cmp_lines != new_lines:
+        print(''.join(difflib.ndiff(cmp_lines, new_lines)), end="")
+        assert False
 

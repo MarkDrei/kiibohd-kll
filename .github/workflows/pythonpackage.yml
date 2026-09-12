@@ -1,37 +1,82 @@
 name: Python package
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  # HID layouts from disk so tests never contact GitHub for hid-io/layouts.
+  KLL_LAYOUTS_PATH: ${{ github.workspace }}/.hid-layouts
 
 jobs:
-  build:
-
+  lint-and-unit:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: [3.5, 3.6, 3.7, 3.8]
+        python-version: ['3.10', '3.11', '3.12']
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+    - name: Check out HID layouts
+      uses: actions/checkout@v4
+      with:
+        repository: hid-io/layouts
+        path: .hid-layouts
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install flake8 pytest flit
     - name: Lint with flake8
       run: |
-        pip install flake8
         # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=.git,__pycache__,.hid-layouts,.controller
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=.git,__pycache__,.hid-layouts,.controller
     - name: Test with pytest
       run: |
-        pip install pytest
-        pytest
+        pytest --ignore=tests/test_kiibohd.py --ignore=tests/test_controller.py
     - name: Test packaging with flit
       run: |
-        pip install flit
         flit build
+
+  firmware:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Check out HID layouts
+      uses: actions/checkout@v4
+      with:
+        repository: hid-io/layouts
+        path: .hid-layouts
+    - name: Check out kiibohd controller
+      uses: actions/checkout@v4
+      with:
+        repository: MarkDrei/kiibohd-Controller
+        path: .controller
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest
+    - name: Test kiibohd and controller integration
+      env:
+        KLL_TEST_CONTROLLER_REPO: ${{ github.workspace }}/.controller
+        KLL_TEST_KLL_REPO: ${{ github.workspace }}
+      run: |
+        pytest tests/test_kiibohd.py tests/test_controller.py
